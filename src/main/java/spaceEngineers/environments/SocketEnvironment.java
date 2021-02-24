@@ -30,9 +30,10 @@ public class SocketEnvironment extends Environment {
             .create();
 
     SocketEnvironment(String host, int port) {
-
+        //should be constructor parameter
         int maxWaitTime = 20000;
 
+        //can use System.out.printf (and add newline to the end of string)
         System.out.println(String.format("Trying to connect with %s on %s:%s (will time-out after %s seconds)", PrintColor.BLUE("Unity"), host, port, maxWaitTime/1000));
 
         long startTime = System.nanoTime();
@@ -40,8 +41,16 @@ public class SocketEnvironment extends Environment {
         while (!socketReady() && millisElapsed(startTime) < maxWaitTime){
 
             try {
+                /*
+                this can cause code to freeze indefinitely (when network is reallybad), create Socket without parameters, then connect with timeout parameter
+                also solves this loop and timeout
+
+                method should throw exception if connect fails, not swallow
+                 */
                 socket = new Socket(host, port);
+                //should always create InputStreamReader with specific encoding, otherwise platform-specific encoding is used
                 reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                //same goes for PrintWriter, specify charset/encoding
                 writer = new PrintWriter(socket.getOutputStream(), true);
             } catch (IOException ignored) { }
         }
@@ -72,6 +81,8 @@ public class SocketEnvironment extends Environment {
     /**
      * Close the socket/reader/writer
      */
+
+    //don't swallow exception, follow Closeable interface, return void, rethrow exceptions
     public boolean close() {
 
         // try to disconnect
@@ -79,6 +90,8 @@ public class SocketEnvironment extends Environment {
 
         if(success){
             try {
+
+                // incorrect resource handling, if first close fails, rest is not closed at all, can use AutoCloseable or kotlin .use instead
                 if (reader != null)
                     reader.close();
                 if (writer != null)
@@ -120,10 +133,12 @@ public class SocketEnvironment extends Environment {
                     // read from the socket
                     return reader.readLine();
                 } catch (IOException ex) {
+                    //no reason to swallow, propagate exception, avoid returning nulls
                     System.out.println("I/O error: " + ex.getMessage());
                     return null;
                 }
         }
+        //exception can be more descriptive, ex "unknown command ${cmd.command}"
         throw new IllegalArgumentException();
     }
 

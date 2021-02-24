@@ -14,6 +14,8 @@ import java.util.Arrays;
 /**
  * This class contains helper functions that are not particularly tied to a package.
  */
+
+//not used, can remove
 public class Helper {
 
     /**

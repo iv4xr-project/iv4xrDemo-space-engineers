@@ -20,6 +20,8 @@ import logger.PrintColor;
  * a Json string. Likewise, the system under test is assumed to send each response
  * object as a Json string.
  */
+
+//seems like good idea to wrap reading and writing to socket, could be used in SocketEnvironment to make it cleaner, lots of code duplication
 public class SocketReaderWriter {
 	
 	public static boolean debug = false ;
