@@ -7,8 +7,7 @@ at Utrecht University within the Software and Game project course.
 
 package environments;
 
-import world.LabRecruitsRawNavMesh;
-import world.Observation;
+import world.MyGameXObservation;
 
 /**
  * A wrapper for commands to be sent to the Lab Recruits. 
@@ -104,20 +103,20 @@ public class Request<ResponseType>  {
     }
 
     /**
-     * Request the initialisation data from Unity:
-     * - Navmesh
-     * - Agent ID's along with their implementation type
-     * @return GymInitialisation
+     * Request the game under test to be initialized. Possibly sending back information such as
+     * the navigation mesh of the loaded level.
      */
-    public static Request<LabRecruitsRawNavMesh> gymEnvironmentInitialisation(LabRecruitsConfig config) {
-        return new Request<>(LabRecruitsRawNavMesh.class, RequestType.INIT, config);
+    public static Request gymEnvironmentInitialisation(MyGameXConfig config) {
+    	throw new UnsupportedOperationException() ;
+        // return new Request<>(NavMesh.class, RequestType.INIT, config);
     }
+
 
     /**
      * Request an observation after executing the sent Command
      */
-    public static Request<Observation> command(AgentCommand command) {
-        return new Request<>(Observation.class, RequestType.AGENTCOMMAND, command);
+    public static Request<MyGameXObservation> command(AgentCommand command) {
+        return new Request<>(MyGameXObservation.class, RequestType.AGENTCOMMAND, command);
     }
 
     /**

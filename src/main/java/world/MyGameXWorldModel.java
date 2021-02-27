@@ -1,14 +1,13 @@
 package world;
 
 import java.util.*;
-import environments.LabRecruitsEnvironment;
 import eu.iv4xr.framework.mainConcepts.W3DEnvironment;
 import eu.iv4xr.framework.mainConcepts.WorldEntity;
 import eu.iv4xr.framework.mainConcepts.WorldModel;
 import eu.iv4xr.framework.spatial.Vec3;
 import nl.uu.cs.aplib.mainConcepts.Environment;
 
-public class LabWorldModel extends WorldModel {
+public class MyGameXWorldModel extends WorldModel {
 
 	public int health ;
 	public int score ;
@@ -32,16 +31,16 @@ public class LabWorldModel extends WorldModel {
 
 	final Map<String,Set<String>> availableInteractionTypes_ = new HashMap<>() ;
 
-	public LabWorldModel() { super() ;
+	public MyGameXWorldModel() { super() ;
 	   // specify which interaction type is possible on which entity types:
 	   Set<String> justSwitch = new HashSet<>() ;
-	   justSwitch.add(LabEntity.SWITCH) ;
+	   justSwitch.add(MyGameXEntity.SWITCH) ;
 	   availableInteractionTypes_.put(INTERACT,justSwitch) ;
 	}
 
 	@Override
 	public List<WorldEntity> mergeNewObservation(WorldModel observation) {
-		LabWorldModel observation_ = (LabWorldModel) observation ;
+		MyGameXWorldModel observation_ = (MyGameXWorldModel) observation ;
 		this.health = observation_.health ;
 		this.score  = observation_.score ;
 		this.mood = observation_.mood ;
@@ -51,8 +50,8 @@ public class LabWorldModel extends WorldModel {
 
 
 	@Override
-	public LabEntity getElement(String id) {
-		return (LabEntity) super.getElement(id) ;
+	public MyGameXEntity getElement(String id) {
+		return (MyGameXEntity) super.getElement(id) ;
 	}
 
 	/**
@@ -74,10 +73,10 @@ public class LabWorldModel extends WorldModel {
     public boolean canInteract(String interactionType, WorldEntity e) {
     	// since Lab Reruits so far only have one interaction type, we skip
     	// checking interactionType.
-    	var target = (LabEntity) e ;
+    	var target = (MyGameXEntity) e ;
 
     	// only switches/buttons can be interacted:
-    	if (target.type != LabEntity.SWITCH) return false ;
+    	if (target.type != MyGameXEntity.SWITCH) return false ;
     	    	
 		var target_onfloorPosition = target.getFloorPosition() ;
         var agent_floorp = getFloorPosition() ;
@@ -91,31 +90,34 @@ public class LabWorldModel extends WorldModel {
 	@Override
 	public boolean isBlocking(WorldEntity e) {
 		switch(e.type) {
-		   case LabEntity.DOOR : return ! e.getBooleanProperty("isOpen") ;
-		   case LabEntity.COLORSCREEN : return true ;
-		   case LabEntity.GOAL : return true ;
+		   case MyGameXEntity.DOOR : return ! e.getBooleanProperty("isOpen") ;
 		   default : return false ;
 		}
 	}
 
 	@Override
-	public LabWorldModel interact(W3DEnvironment env, String interactionType, WorldEntity e) {
+	public MyGameXWorldModel interact(W3DEnvironment env, String interactionType, WorldEntity e) {
+		
+		throw new UnsupportedOperationException() ;
+		
+		/*
 		// For now, Lab Recruits only have one interaction type, so we are not going
 		// to check interactionType.
-		var target = (LabEntity) e ;
+		var target = (SeEntity) e ;
 		// using != should be ok in this case, as they should point to the same string as well:
-		if (target.type != LabEntity.SWITCH) return null ;
-		return (LabWorldModel) super.interact(env, interactionType, e) ;
+		if (target.type != SeEntity.SWITCH) return null ;
+		return (SeWorldModel) super.interact(env, interactionType, e) ;
+		*/
 	}
 
 	@Override
-	public LabWorldModel observe(W3DEnvironment env) {
-		return (LabWorldModel) super.observe(env) ;
+	public MyGameXWorldModel observe(W3DEnvironment env) {
+		return (MyGameXWorldModel) super.observe(env) ;
 	}
 
 	@Override
-	public LabWorldModel moveToward(W3DEnvironment env, Vec3 targetLocation) {
-		return (LabWorldModel) super.moveToward(env, targetLocation) ;
+	public MyGameXWorldModel moveToward(W3DEnvironment env, Vec3 targetLocation) {
+		return (MyGameXWorldModel) super.moveToward(env, targetLocation) ;
 	}
 
 

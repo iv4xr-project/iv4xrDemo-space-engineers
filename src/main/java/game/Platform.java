@@ -16,6 +16,7 @@ public abstract class Platform {
 
     private static String NOT_INSTALLED_MESSAGE = PrintColor.FAILURE() + ": It seems that you do not have the game installed on your pc, please visit our website/git on how to install the game!\n" +
             "If you chose to install the game in a different folder, use [new UnityTestServer(useGraphics, \"your installation path\")] to redirect it!";
+    
     private static String UNSUPPORTED_PLATFORM_MESSAGE = "This platform is not supported, please contact the team!";
 
     public enum SupportedPlatforms { Windows, Mac, Linux }

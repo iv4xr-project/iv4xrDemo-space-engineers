@@ -17,8 +17,8 @@ import eu.iv4xr.framework.mainConcepts.ObservationEvent.VerdictEvent;
 import eu.iv4xr.framework.mainConcepts.TestAgent;
 import eu.iv4xr.framework.mainConcepts.WorldEntity;
 
-import world.BeliefState;
-import world.LabEntity;
+import world.MyAgentBeliefState;
+import world.MyGameXEntity;
 
 import java.util.function.Predicate;
 
@@ -50,7 +50,7 @@ public class GoalLib {
     public static Goal positionInCloseRange(Vec3 goalPosition) {
         //define the goal
         Goal goal = new Goal("This position is in-range: " + goalPosition.toString())
-        		    . toSolve((BeliefState belief) -> {
+        		    . toSolve((MyAgentBeliefState belief) -> {
                         //check if the agent is close to the goal position
                         return Vec3.dist(goalPosition,belief.worldmodel.getFloorPosition()) < 0.4;
                     });
@@ -58,7 +58,7 @@ public class GoalLib {
         Goal g = goal.withTactic(
         		 FIRSTof(//the tactic used to solve the goal
                    TacticLib.navigateTo(goalPosition),//move to the goal position
-                   TacticLib.explore(), //explore if the goal position is unknown
+                   //TacticLib.explore(), //explore if the goal position is unknown
                    ABORT())) ;
         return g;
     }
@@ -99,7 +99,7 @@ public class GoalLib {
     public static GoalStructure entityInCloseRange(String entityId) {
     	//define the goal
         Goal goal = new Goal("This entity is closeby: " + entityId)
-        		    . toSolve((BeliefState belief) -> {
+        		    . toSolve((MyAgentBeliefState belief) -> {
                         //check if the agent is close to the goal position
         		    	var e = belief.worldmodel.getElement(entityId) ;
         		    	if (e == null) return false ;
@@ -109,7 +109,7 @@ public class GoalLib {
         return goal.withTactic(
         		 FIRSTof(//the tactic used to solve the goal
                    TacticLib.navigateToCloseByPosition(entityId),//move to the goal position
-                   TacticLib.explore(), //explore if the goal position is unknown
+                   //TacticLib.explore(), //explore if the goal position is unknown
                    ABORT())) 
         	  . lift();
     }
@@ -132,21 +132,21 @@ public class GoalLib {
         //the first goal is to navigate to the entity:
         var goal1 = 
         	  goal(String.format("This entity is in interaction distance: [%s]", entityId))
-        	  . toSolve((BeliefState belief) -> {
-        		  var e = (LabEntity) belief.worldmodel.getElement(entityId) ;
+        	  . toSolve((MyAgentBeliefState belief) -> {
+        		  var e = (MyGameXEntity) belief.worldmodel.getElement(entityId) ;
        	          return e!=null && Vec3.dist(belief.worldmodel.getFloorPosition(), e.getFloorPosition()) < 0.35 ;
         	    })
         	  . withTactic(
                     FIRSTof( //the tactic used to solve the goal
                     TacticLib.navigateTo(entityId), //try to move to the entity
-                    TacticLib.explore(), //find the entity
+                    //TacticLib.explore(), //find the entity
                     ABORT())) 
               . lift();
 
         // then, the 2nd goal is to interact with the object:
         var goal2 = 
         	  goal(String.format("This entity is interacted: [%s]", entityId))
-        	  . toSolve((BeliefState belief) -> true) 
+        	  . toSolve((MyAgentBeliefState belief) -> true) 
               . withTactic(
         		   FIRSTof( //the tactic used to solve the goal
                    TacticLib.interact(entityId),// interact with the entity
@@ -166,11 +166,13 @@ public class GoalLib {
 	 */
     public static GoalStructure entityStateRefreshed(String id){
         return goal("The belief on this entity is refreshed: " + id)
-                .toSolve((BeliefState b) -> 
-                    b.evaluateEntity(id, e -> b.age(e) == 0))
+                .toSolve((MyAgentBeliefState b) -> {
+                	WorldEntity e = b.worldmodel.getElement(id) ;
+                	return e!=null && b.age(e) == 0 ;
+                })
                 .withTactic(FIRSTof(
                         TacticLib.navigateToClosestReachableNode(id),
-                        TacticLib.explore(),
+                        //TacticLib.explore(),
                         ABORT()))
                 .lift() ;
     }
@@ -189,7 +191,9 @@ public class GoalLib {
         return SEQ(
             entityStateRefreshed(id),
             goal("This entity is inspected: " + id)
-                .toSolve((BeliefState b) -> b.evaluateEntity(id, predicate))
+                .toSolve((MyAgentBeliefState b) -> {
+                	WorldEntity e = b.worldmodel.getElement(id) ;
+                	return e!=null && predicate.test(e) ;})
                 .withTactic(
                     SEQ(
                     TacticLib.observe(),
@@ -213,10 +217,11 @@ public class GoalLib {
         return SEQ(
             entityStateRefreshed(id),
             testgoal("Invariant check " + id, agent)
-            . toSolve((BeliefState b) -> true) // nothing to solve
+            . toSolve((MyAgentBeliefState b) -> true) // nothing to solve
             . invariant(agent,                 // something to check :)
-            		(BeliefState b) -> {
-            			if (b.evaluateEntity(id, predicate))
+            		(MyAgentBeliefState b) -> {
+            			WorldEntity e = b.worldmodel.getElement(id) ;
+            			if(e != null && predicate.test(e))
             			   return new VerdictEvent("Object-check " + id, info, true) ;
             			else 
             			   return new VerdictEvent("Object-check " + id, info, false) ;
@@ -233,12 +238,12 @@ public class GoalLib {
      * Internally, this goal will first spend one tick to get a fresh observation, then at the next tick it
      * will do the checking.
      */ 
-    public static GoalStructure invariantChecked(TestAgent agent, String info, Predicate<BeliefState> predicate){
+    public static GoalStructure invariantChecked(TestAgent agent, String info, Predicate<MyAgentBeliefState> predicate){
         return SEQ(
             testgoal("Evaluate " + info, agent)
-            .toSolve((BeliefState b) -> true) // nothing to solve
+            .toSolve((MyAgentBeliefState b) -> true) // nothing to solve
             .invariant(agent,                 // something to check :)
-            		(BeliefState b) -> {
+            		(MyAgentBeliefState b) -> {
             			if (predicate.test(b))
             			   return new VerdictEvent("Inv-check", info, true) ;
             			else 
@@ -248,30 +253,6 @@ public class GoalLib {
             .withTactic(SEQ(
                     TacticLib.observe(),
                     ABORT())).lift()
-        );
-    }
-
-    /**
-     * This goal structure will cause the agent to share its memory once with all connected agents in the broadcast
-     *
-     * @param id: The id of the sending agent
-     * @return A goal structure which will be concluded when the agent shared its memory once
-     */
-    public static GoalStructure observationSent(String id){
-        return goal("Map is shared").toSolve((BeliefState belief) -> true).withTactic(
-                TacticLib.shareObservation(id)
-        ).lift();
-    }
-
-    /**
-     * This goal structure will cause the agent to send a ping to the target agent
-     * @param idFrom: The id of the sending agent
-     * @param idTo: The id of the receiving agent
-     * @return A goal structure which will be concluded when the agent send a ping to the target agent
-     */
-    public static Goal pingSent(String idFrom, String idTo){
-        return new Goal("Send ping").toSolve((BeliefState belief) -> true).withTactic(
-                TacticLib.sendPing(idFrom, idTo)
         );
     }
     
