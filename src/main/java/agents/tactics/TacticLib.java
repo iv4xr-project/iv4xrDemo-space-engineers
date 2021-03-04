@@ -23,28 +23,8 @@ import world.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * This class provide a set of standard tactics to interact with the Lab
- * Recruits game. While {@link world.LabWorldModel} (and likewise the underlying
- * {@link environments.LabRecruitsEnvironment}) provides the primitive
- * methods/actions to control the Lab Recruit game, the tactics provided by this
- * class TacticLib provide higher-level actions, and are used to solve goals for aplib
- * agents. Most tactics provided here incorporate automatic path finding over
- * the Lab Recruits game world. This path finding will in principle allow an
- * agent to auto navigate from its current position to some position p,
- * provided: (1) p is physically reachable from the agent's current position,
- * and (2) the agent believes that p is reachable. For example, if p is located
- * in a room that the agent never sees, it would then believe that it has no way
- * to reach p. So, before it is able to auto-navigate to p, we may need to first
- * convince the agent of the reachability of p, e.g. by making it see that the
- * areas in-between are reachable.
- */
 public class TacticLib {
 
-	/**
-	 * Distance used to unstuck an agent.
-	 */
-	public static final float UNSTUCK_DELTA = 0.5f ;
 
 	/**
 	 * When the agent comes to this distance to the current exploration target,
@@ -85,8 +65,8 @@ public class TacticLib {
 	 */
 	public static Tactic navigateTo(Vec3 position) {
 		return FIRSTof(
-				 forceReplanPath(),
-				 tryToUnstuck(),
+				 //forceReplanPath(),
+				 //tryToUnstuck(),
 				 rawNavigateTo(position)
 			   )  ;
 	}
@@ -100,8 +80,8 @@ public class TacticLib {
 	 */
 	public static Tactic navigateTo(String id) {
 		return FIRSTof(
-				 forceReplanPath(),
-				 tryToUnstuck(),
+				 //forceReplanPath(),
+				 //tryToUnstuck(),
 				 rawNavigateTo(id)
 			   )  ;
 	}
@@ -117,9 +97,9 @@ public class TacticLib {
 		Action move =
 				unguardedNavigateTo("Navigate to a position nearby " + id)
 
-				. on((BeliefState belief) -> {
+				. on((MyAgentBeliefState belief) -> {
 
-					var e = (LabEntity) belief.worldmodel.getElement(id) ;
+					var e = (MyGameXEntity) belief.worldmodel.getElement(id) ;
     			    if (e==null) return null ;
 
 					Vec3 closeByLocation = null ;
@@ -145,7 +125,7 @@ public class TacticLib {
 	    			    var entity_sqcenter = new Vec3((float) Math.floor((double) entity_location.x - 0.5f) + 1f,
 	    			    		entity_location.y,
 	    			    		(float) Math.floor((double) entity_location.z - 0.5f) + 1f) ;
-	    			    
+
 	    			    List<Vec3> candidates = new LinkedList<>() ;
 	    			    float delta = 0.5f ;
 	    			    // adding North and south candidates
@@ -160,7 +140,7 @@ public class TacticLib {
 	    			    	// if c (a candidate point near the entity) is on the navigable,
 	    			    	// we should ignore it:
 	    			    	if (getCoveringFaces(belief,c) == null) continue ;
-	    			    	var result = belief.findPathTo(c, true) ; 
+	    			    	var result = belief.findPathTo(c, true) ;
 	    			    	if (result != null) {
 	    			    		// found our target
 	    			    		System.out.println(">>> a reachable closeby position found :" + c + ", path: " + result.snd) ;
@@ -182,18 +162,18 @@ public class TacticLib {
 				}) ;
 
 		return  FIRSTof(
-				 forceReplanPath(),
-				 tryToUnstuck(),
+				 //forceReplanPath(),
+				 //tryToUnstuck(),
 				 move.lift()
 			   ) ;
 	}
-	
-	
+
+
 	/**
-	 * Return the face in the nav-mesh maintained by a BeliefState, 
+	 * Return the face in the nav-mesh maintained by a BeliefState,
 	 * that covers a given point. Return null if there is none.
 	 */
-    static Face getCoveringFaces(BeliefState S, Vec3 p) {
+    static Face getCoveringFaces(MyAgentBeliefState S, Vec3 p) {
     	for(Face face : S.pathfinder.faces) {
 			if (face.distFromPoint(p, S.pathfinder.vertices) <= 0.1) {
 				// found it
@@ -202,7 +182,7 @@ public class TacticLib {
     	}
     	return null ;
     }
-	
+
 
 	/**
 	 * Navigate to a navigation node closest to the given entity, and is moreover
@@ -215,9 +195,9 @@ public class TacticLib {
 		Action move =
 				unguardedNavigateTo("Navigate to a navigation vertex nearby " + id)
 
-				. on((BeliefState belief) -> {
+				. on((MyAgentBeliefState belief) -> {
 
-					LabEntity e = belief.worldmodel.getElement(id) ;
+					MyGameXEntity e = belief.worldmodel.getElement(id) ;
     			    if (e==null) return null ;
 
 					Vec3 nodeLocation = null ;
@@ -271,8 +251,8 @@ public class TacticLib {
 				}) ;
 
 		return FIRSTof(
-				 forceReplanPath(),
-				 tryToUnstuck(),
+				 //forceReplanPath(),
+				 //tryToUnstuck(),
 				 move.lift()
 			   )  ;
 	}
@@ -289,8 +269,8 @@ public class TacticLib {
 
     	Action move = unguardedNavigateTo("Navigate to " + id)
     			      // replacing its guard with this new one:
-		              . on((BeliefState belief) -> {
-		                	var e = (LabEntity) belief.worldmodel.getElement(id) ;
+		              . on((MyAgentBeliefState belief) -> {
+		                	var e = (MyGameXEntity) belief.worldmodel.getElement(id) ;
 		    			    if (e==null) return null ;
 		    			    var p = e.getFloorPosition() ;
 		    			    // find path to p, but don't force re-calculation
@@ -323,7 +303,7 @@ public class TacticLib {
 	 */
     public static Tactic rawNavigateTo(Vec3 position) {
     	return unguardedNavigateTo("Navigate to " + position)
-    		   . on((BeliefState belief) -> {
+    		   . on((MyAgentBeliefState belief) -> {
     			    // Check if a path to the position can be found; use the flag "false"
     			    // so as not to force repeated recalculation of the reachability.
     			    // The fragment below will check if the given position is already
@@ -360,24 +340,17 @@ public class TacticLib {
      */
     private static Action unguardedNavigateTo(String actionName) {
     	Action move = action(actionName)
-                .do2((BeliefState belief) -> (Pair<Vec3,List<Vec3>> q)  -> {
+                .do2((MyAgentBeliefState belief) -> (Pair<Vec3,List<Vec3>> q)  -> {
                 	// q is a pair of (distination,path). Passing the destination is not necessary
                 	// for this tactic, but it will allows us to reuse the effect
                 	// part for other similar navigation-like tactics
                 	var destination = q.fst ;
                 	var path = q.snd ;
 
-                	//System.out.println("### tactic NavigateTo " + destination) ;
-
                 	//if a new path is received, memorize it as the current path to follow:
                 	if (path!= null) {
                 		belief.applyPath(belief.worldmodel.timestamp, destination, path) ;
                 	}
-                    //move towards the next way point of whatever the current path is:
-                	//System.out.println(">>> destination: " + destination) ;
-                	//System.out.println(">>> path: " + path) ;
-                	//System.out.println(">>> memorized dest: " + belief.getGoalLocation()) ;
-                	//System.out.println(">>> memorized path: " + belief.getMemorizedPath()) ;
                 	if (belief.getMemorizedPath() != null) {
                 		belief.worldmodel.moveToward(belief.env(),belief.getCurrentWayPoint());
                 		return belief ;
@@ -385,169 +358,9 @@ public class TacticLib {
                 	else return null ;
                     })
                 // a dummy guard; override this when using this action:
-                .on((BeliefState belief) -> new Pair(null,null)) ;
-/* ----- conflict
-                    })
-                .on((BeliefState belief) -> {
-                	Vec3 currentDestination = belief.getGoalLocation() ;
-                	if (currentDestination==null || currentDestination.distance(position) >= 0.05
-                			|| !belief.mentalMap.hasActivePath()) {
-                		// the agent has no current location to go to, or the new goal location
-                		// is quite different from the current goal location, we will then calculate
-                		// a new path:
-                		var path = belief.findPathTo(position) ;
-                		if (path==null || path.length==0) return null ;
-                		return new Tuple(position,path) ;
-                	}
-                	else {
-                		// the agent is already going to the specified location. So there is
-                		// no need to calculate a new path. We will return a pair(position,null)
-                		// to signal this.
-                		return new Tuple(position,null) ;
-                	}}) ;
-									*/
+                .on((MyAgentBeliefState belief) -> new Pair(null,null)) ;
+
     	return move ;
-    }
-
-
-    /**
-     * When asked to get to a certain (far away) position, the agent would need
-     * multiple update rounds to get to the goal position. To do this, it first
-     * ask a path to be calculated (some pathfinding algorithm is used to do this).
-     * If a path can be found, the agent will store this in its memory and proceed
-     * to follow this path. It may happen that this path leads to a door that
-     * turns out to be closed; so, path re-calculation is needed.
-     *
-     * This method constructs a tactic T that tries to identify when recalculation of
-     * path to the the goal position, namely when:
-     *
-     *    the agent observes a door has a state which is different than the last time
-     *    it saw it.
-     *
-     *  Path recalculation is forced by clearing the goal-position.
-     */
-    public static Tactic forceReplanPath() {
-        Tactic clearTargetPosition = action("Force path recalculation.")
-                .do1((BeliefState belief) -> {
-                	System.out.println("####Detecting some doors change their state. Forcing path recalculation @" + belief.worldmodel.position) ;
-                	belief.clearGoalLocation();
-                	return belief ;
-                })
-                .on_((BeliefState belief) -> {
-                	// be careful with the threshold value (the "10" below);
-                	// if this is set too low, the agent may unnecessarily do re-plan
-                	// if it is set too high, the agent may get stuck longer
-
-                	var someDoorHasChangedState =
-                			belief.knownDoors().stream()
-                	        . anyMatch(door -> door.lastStutterTimestamp < 0
-                	                           && door.hasPreviousState()
-                	                           && door.hasChangedState())
-                	        ;
-
-                	return someDoorHasChangedState ;
-                	/*
-                	if (belief.getGoalLocation() == null
-                		|| belief.worldmodel.timestamp - belief.getGoalLocationTimestamp() < 50) {
-                		return false ;
-                	}
-
-                	var closeby_doors = belief.closebyDoor() ;
-                	//System.out.println(">>> #close-by doors: " + closeby_doors.size()) ;
-            		for (var door : closeby_doors) {
-                		if (!belief.isOpen(door)) {
-                			return true ;
-                		}
-                	}
-                	return false ;
-                	*/
-
-                })
-                .lift() ;
-           return clearTargetPosition ;
-    }
-    /**
-     * This tactic detects if the agent gets stuck (e.g. if the position turns out to be unreachable),
-	 * in which case it will check again if a path to the position exists, according
-	 * to the latest information it has. If so, the agent will follow this path, and
-	 * else the tactic is not enabled.
-     * @return
-     */
-    public static Tactic tryToUnstuck() {
-    	Tactic unstuck = action("Trying to unstuck")
-    			.do1((BeliefState belief) -> {
-    				System.out.println("#### STUCK, probably cannot get past a turn-corner: @"
-    			           + belief.worldmodel.position
-    			           + ", current way-point: "
-    			           + belief.getCurrentWayPoint()) ;
-    	    		var unstuckPosition = unstuck(belief) ;
-    	    		if (unstuckPosition != null) {
-    	    			System.out.println("#### forcing a move past the corner...to " + unstuckPosition) ;
-    	    			//belief.mentalMap.insertNewWayPoint(unstuckPosition);
-    	    			belief.worldmodel.moveToward(belief.env(),unstuckPosition) ;
-    	    		}
-    	    		else {
-    	    			// else .... for now do nothing :|
-    	        		System.out.println("#### unfortunately cannot find an unstuck solution...") ;
-    	    		}
-    	    	    belief.clearStuckTrackingInfo();
-    				return belief ;
-    			})
-    			.on_((BeliefState belief) -> {
-    				//System.out.println(">>> stuck: " + belief.isStuck() + ", goal loc: " + belief.getGoalLocation()) ;
-    				return belief.getGoalLocation() != null &&  belief.isStuck() ;
-    			})
-    			.lift() ;
-    	return unstuck ;
-    }
-
-    /**
-     * If the agent gets stuck in an bending corner (because the navigation algorithm does not
-     * take agent's dimension into account... :| ), this method tries to find a position close
-     * to the agent, which can unstuck agent. The agent can travel to this new position, which
-     * will move it past the stucking corner.
-     *
-     * If such a position can be found, it is returned. Else null is returned.
-     *
-     * Note that the method simply checks if there is a navigation polygon that contains this
-     * unstuck position. It doesn't check if this position is actually reachable from the agent's
-     * current position.
-     */
-    public static Vec3 unstuck(BeliefState belief) {
-    	var agent_current_direction = Vec3.sub(belief.getCurrentWayPoint(), belief.worldmodel.getFloorPosition()) ;
-
-    	var x_orientation = Math.signum(agent_current_direction.x) ;  // 1 if the agent is facing eastly, and -1 if westly
-    	var z_orientation = Math.signum(agent_current_direction.z) ;  // 1 if the agent is facing northly, and -1 if southly
-    	// System.out.println("#### calling unstuck()") ;
-    	// try E/W unstuck first:
-    	if (x_orientation != 0) {
-    		var p = belief.worldmodel.getFloorPosition() ;
-    		p.x += TacticLib.UNSTUCK_DELTA * x_orientation ;
-    		if (isPointInNavigableSurface(belief,p)) return p ;
-        	//if (mentalMap.pathFinder.graph.vecToNode(p) != null) return p ;
-    	}
-    	// try N/S unstuck:
-    	if (z_orientation != 0) {
-    		var p = belief.worldmodel.getFloorPosition() ;
-    		p.z += TacticLib.UNSTUCK_DELTA * z_orientation ;
-        	if (isPointInNavigableSurface(belief,p)) return p ;
-        	//if (mentalMap.pathFinder.graph.vecToNode(p) != null) return p ;
-    	}
-    	// can't find an unstuck option...
-    	return null ;
-    }
-
-    private static boolean isPointInNavigableSurface(BeliefState belief, Vec3 p) {
-    	List<Face> faces = new LinkedList<>() ;
-    	faces.addAll(belief.pathfinder.faces) ;
-    	faces.sort((f1,f2) ->
-    	     Float.compare(Vec3.dist(belief.pathfinder.vertices.get(f1.vertices[0]),p),
-    	    		       Vec3.dist(belief.pathfinder.vertices.get(f2.vertices[0]),p))) ;
-    	for (Face f : faces) {
-    		if (f.distFromPoint(p, belief.pathfinder.vertices) <= DIST_SURFACE_THRESHOLD_STUCK)
-    			return true ;
-    	}
-    	return false ;
     }
 
 
@@ -558,20 +371,20 @@ public class TacticLib {
      */
     public static Tactic interact(String objectID) {
         Tactic interact = action("Interact")
-               . do2((BeliefState belief) -> (WorldEntity e) -> {
-                	  var obs = belief.worldmodel.interact(belief.env(), LabWorldModel.INTERACT, e)  ;
+               . do2((MyAgentBeliefState belief) -> (WorldEntity e) -> {
+                	  var obs = belief.worldmodel.interact(belief.env(), MyGameXWorldModel.INTERACT, e)  ;
                 	  // force update to worldmodel:
                 	  //System.out.println("## interacted with " + objectID) ;
                 	  belief.mergeNewObservationIntoWOM(obs);
                       return belief;
                     })
-               . on((BeliefState belief) -> {
+               . on((MyAgentBeliefState belief) -> {
                 	var e = belief.worldmodel.getElement(objectID) ;
                 	//System.out.println(">>>> " + objectID + ": " + e) ;
                 	if (e==null) return null ;
                 	// System.out.println(">>>>    dist: " + Vec3.dist(belief.worldmodel.getFloorPosition(),e.getFloorPosition())) ;
 
-                	if (belief.worldmodel.canInteract(LabWorldModel.INTERACT, e)) {
+                	if (belief.worldmodel.canInteract(MyGameXWorldModel.INTERACT, e)) {
                 		return e ;
                 	}
                 	//System.out.println(">>> cannot interact with " + e.id) ;
@@ -593,7 +406,7 @@ public class TacticLib {
     public static Tactic observe() {
         //this is a wait action which will allow the agent to retrieve an observation
         Tactic observe = action("Observe")
-                .do1((BeliefState belief) -> {
+                .do1((MyAgentBeliefState belief) -> {
                 	// var obs = belief.worldmodel.observe(belief.env());
                 	// force wom update:
                 	// belief.mergeNewObservationIntoWOM(obs) ;
@@ -617,169 +430,5 @@ public class TacticLib {
         return observe;
     }
     */
-
-    /**
-     * This tactic will allow an agent to observe, and share its observation to other agents.
-     */
-    public static Tactic shareObservation(String id){
-        return action("Share map")
-                . do1((BeliefState belief)-> {
-                	var obs = belief.worldmodel.observe(belief.env());
-                	// force wom update:
-                	belief.mergeNewObservationIntoWOM(obs) ;
-                    Acknowledgement a = belief.messenger().send(id,0, Message.MsgCastType.BROADCAST, "","ObservationSharing",obs) ;
-                    return belief;
-                }).lift();
-    }
-
-    /**
-     * This tactic cause the agent to receive an memory share if one is available and make an observation
-     * @return The tactic which will receive the memory share
-     */
-    public static Tactic receiveObservationShare(){
-        return action("Receive map sharing")
-                . do1((BeliefState belief)-> {
-                	//get the  messages
-                	Message m = belief.messenger().retrieve(M -> M.getMsgName().equals("ObservationSharing")) ;
-                    while(m != null){
-                        //apply the memory share
-                    	var obs = (LabWorldModel) m.getArgs()[0] ;
-                    	if (obs.timestamp >= belief.worldmodel.timestamp) {
-                    		// Don't do this! It would take over the agent position of the new obs.
-                    		// belief.worldmodel.mergeNewObservation(obs) ;
-                    		// Do this instead:
-                    		for (WorldEntity e : obs.elements.values()) {
-                    			belief.worldmodel.updateEntity(e) ;
-                    		}
-                    	}
-                    	else {
-                    		belief.worldmodel.mergeOldObservation(obs) ;
-                    	}
-                    	belief.pathfinder.markAsSeen(obs.visibleNavigationNodes);
-                        m = belief.messenger().retrieve(M -> M.getMsgName().equals("ObservationSharing")) ;
-                    }
-                    //do an observation
-                    //LabWorldModel o = belief.env().observe(belief.id);
-                    //belief.updateBelief(o);
-                    return belief;
-                })
-                .on_((BeliefState S) -> S.messenger().has(M -> M.getMsgName().equals("ObservationSharing")))//check if there is a memory share available
-                .lift() ;
-    }
-
-
-    public static Tactic sendPing(String idFrom, String idTo){
-        return action("Send ping")
-                . do1((BeliefState belief)-> {
-                    //do an observation
-                	//LabWorldModel o = belief.env().observe(belief.id);
-
-                    //send the message
-                    Acknowledgement a = belief.messenger().send(idFrom,0, Message.MsgCastType.SINGLECAST, idTo,"Ping", "") ;
-                    return belief;
-                }).lift();
-    }
-
-    /**
-     * This tactic cause the agent to receive a ping if one is available and make an observation
-     * @return The tactic which will receive the ping returns true or false on depended on whether there was an ping yes or no
-     */
-    public static Tactic receivePing(){
-        return action("Receive ping")
-                . do1((BeliefState belief)-> {
-                    //get the ping message
-                    Message m = belief.messenger().retrieve(M -> M.getMsgName().equals("Ping"));
-
-                    //update the belief state
-                    if(m != null) belief.receivedPing = true;
-
-                    //do an observation
-                    //LabWorldModel o = belief.env().observe(belief.id);
-
-                    //return whether we have received an observation yes or no
-                    return belief;
-                })
-                .lift() ;
-    }
-
-    /**
-     * This method will construct a tactic in which the agent will "explore" the world.
-     * The tactic will locate the nearest reachable navigation node which the agent
-     * has not discovered yet, and drive the agent to go there.
-     */
-    public static Tactic explore() {
-
-    	var memo = new MiniMemory("S0") ;
-    	// three states:
-    	//  S0 ; initial exploration state, a new exploration target must be set
-    	//  inTransit: when the agent is traveling to the set exploration target
-    	//  exhausted: there is no more exploration target left
-    	//
-
-    	var explore_ =
-    			unguardedNavigateTo("Explore: traveling to an exploration target")
-
-    			. on((BeliefState belief) -> {
-    				 if(memo.stateIs("S0")) {
-    					 // in this state we must decide a new exploration target:
-
-                         //get the location of the closest unexplored node
-        				 var position = belief.worldmodel.getFloorPosition() ;
-        				 //System.out.println(">>> #explored nodes:" + belief.pathfinder.numberOfSeen()) ;
-        				 var path = belief.pathfinder.explore(position,BeliefState.DIST_TO_FACE_THRESHOLD) ;
-
-        				 if (path==null || path.isEmpty()) {
-        					memo.moveState("exhausted") ;
-                            System.out.println("### no new and reachable navigation point found; agent is @" + belief.worldmodel.position) ;
-                            return null ;
-        				 }
-        				 List<Vec3> explorationPath = path.stream()
-        						            .map(v -> belief.pathfinder.vertices.get(v))
-        						            .collect(Collectors.toList()) ;
-
-        				 var target = explorationPath.get(explorationPath.size() - 1) ;
-        				 System.out.println("### setting a new exploration target: " + target) ;
-                         System.out.println("### abspath to exploration target: " + path) ;
-                         System.out.println("### path to exploration target: " + explorationPath) ;
-                         memo.memorized.clear();
-                         memo.memorize(target);
-                         memo.moveState("inTransit") ; // move the exploration state to inTransit...
-                         return new Pair(target, explorationPath);//return the path finding information
-    				 }
-    				 else if (memo.stateIs("inTransit")) {
-    					 Vec3 exploration_target = (Vec3) memo.memorized.get(0) ;
-                         // note that exploration_target won't be null because we are in the state
-                         // in-Transit
-                         Vec3 agentLocation = belief.worldmodel.getFloorPosition() ;
-                         Vec3 currentDestination = belief.getGoalLocation() ;
-                         var distToExplorationTarget = Vec3.dist(agentLocation,exploration_target) ;
-                         if (distToExplorationTarget <= EXPLORATION_TARGET_DIST_THRESHOLD // current exploration target is reached
-                             || currentDestination==null
-                             || Vec3.dist(currentDestination,exploration_target) > 0.3) {
-                        	 // in all these cases we need to select a new exploration target.
-                        	 // This is done by moving back the exploration state to S0.
-                        	 memo.moveState("S0");
-                         }
-                         if (distToExplorationTarget<=EXPLORATION_TARGET_DIST_THRESHOLD) {
-                        	 System.out.println("### dist to explroration target " + distToExplorationTarget) ;
-                         }
-                         // System.out.println(">>> explore in-transit: " + memo.stateIs("inTransit")) ;
-                         // System.out.println(">>> exploration target: " + exploration_target) ;
-                         // We should not need to re-calculate the path. If we are "inTransit" the path is
-                         // already in the agent's memory
-                         // return new Tuple(g, belief.findPathTo(g));
-                         return new Pair(exploration_target,null);
-    				 }
-                     // in all other cases, the guard is not enabled:
-    				 return null ;
-                 })
-               . lift();
-
-
-        return FIRSTof(
-        		 forceReplanPath(),
-				 tryToUnstuck(),
-				 explore_) ;
-    }
 
 }

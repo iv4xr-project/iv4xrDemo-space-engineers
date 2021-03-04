@@ -8,62 +8,63 @@ at Utrecht University within the Software and Game project course.
 package agents;
 
 import environments.AgentCommand;
-import environments.LabRecruitsEnvironment;
 import environments.Request;
 import eu.iv4xr.framework.mainConcepts.TestAgent;
 import eu.iv4xr.framework.mainConcepts.TestDataCollector;
+import eu.iv4xr.framework.mainConcepts.W3DEnvironment;
 import nl.uu.cs.aplib.mainConcepts.GoalStructure;
 import nl.uu.cs.aplib.multiAgentSupport.ComNode;
-import world.BeliefState;
+import spaceEngineers.SpaceEngEnvironment;
+import world.MyAgentBeliefState;
 
 /**
  * A subclass of {@link eu.iv4xr.framework.mainConcepts.TestAgent} to test
  * the Lab Recruits game. It provides some overriding of inherited methods,
  * but facilitating some convenience type casting.
  */
-public class LabRecruitsTestAgent extends TestAgent {
+public class SeTestAgent extends TestAgent {
 
 	
     /**
      * The constructor for the test agent.
      */
-	public LabRecruitsTestAgent(String id) {
+	public SeTestAgent(String id) {
 		super(id,null) ;
     }
 	
     /**
      * The constructor for the test agent with an id or role attached to itself (this is required for agent communication).
      */
-    public LabRecruitsTestAgent(String id, String role) {
+    public SeTestAgent(String id, String role) {
         super(id, role);
     }
     
-    public LabRecruitsTestAgent attachState(BeliefState state) {
+    public SeTestAgent attachState(MyAgentBeliefState state) {
     	state.id = this.id ;
     	state.worldmodel.agentId = this.id ;
     	super.attachState(state);
     	return this ;
     }
     
-    public LabRecruitsTestAgent attachEnvironment(LabRecruitsEnvironment env) {
+    public SeTestAgent attachEnvironment(SpaceEngEnvironment env) {
     	super.attachEnvironment(env) ;
     	return this ;
     }
     
     @Override
-    public LabRecruitsTestAgent setGoal(GoalStructure g) {
+    public SeTestAgent setGoal(GoalStructure g) {
     	super.setGoal(g) ;
     	return this ;
     }
     
     @Override
-    public LabRecruitsTestAgent registerTo(ComNode comNode) {
+    public SeTestAgent registerTo(ComNode comNode) {
     	super.registerTo(comNode) ;
     	return this ;
     }
     
     @Override
-    public LabRecruitsTestAgent setTestDataCollector(TestDataCollector dc) {
+    public SeTestAgent setTestDataCollector(TestDataCollector dc) {
     	super.setTestDataCollector(dc) ;
     	return this ;
     }
@@ -94,11 +95,11 @@ public class LabRecruitsTestAgent extends TestAgent {
         //getState().updateBelief(env().observe(getState().id));
     //}
 
-    public BeliefState getState(){
-        return (BeliefState) this.state;
+    public MyAgentBeliefState getState(){
+        return (MyAgentBeliefState) this.state;
     }
 
-    public LabRecruitsEnvironment env(){
+    public W3DEnvironment env(){
         return getState().env();
     }
 }

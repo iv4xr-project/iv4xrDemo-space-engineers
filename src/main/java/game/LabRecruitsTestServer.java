@@ -7,9 +7,10 @@ at Utrecht University within the Software and Game project course.
 
 package game;
 
-import environments.LabRecruitsEnvironment;
 import helperclasses.Util;
 import logger.PrintColor;
+import spaceEngineers.SpaceEngEnvironment;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -62,7 +63,7 @@ public class LabRecruitsTestServer {
             throw new IllegalCallerException("Cannot wait for game to load, because, the server already closed down!");
 
         // try to connect with an empty configuration
-        new LabRecruitsEnvironment();
+        SpaceEngEnvironment.localhost();
     }
 
     // close the server by destroying the process
